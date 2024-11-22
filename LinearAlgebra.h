@@ -26,6 +26,8 @@ Matrix add(const Matrix& a, const Matrix& b);
 Matrix subtract(const Matrix& a, const Matrix& b);
 Matrix multiply(const Matrix& a, const Matrix& b);
 Matrix scalarMultiply(double scalar, const Matrix& matrix);
+Matrix elementwiseMultiply(const Matrix& a, const Matrix& b);
+Matrix meanSquaredError(const Matrix& a, const Matrix& b);
 Matrix transpose(const Matrix& matrix);
 void printMatrix(const Matrix& matrix);
 

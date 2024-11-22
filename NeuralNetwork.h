@@ -18,8 +18,11 @@ private:
 public:
     NeuralNetwork(const std::vector<int>& layers);
     Matrix feedforward(const Matrix& input);
+    void backpropagate(const Matrix& input, const Matrix& expected);
     static Matrix sigmoid(const Matrix& input);
+    static Matrix sigmoidDerivative(const Matrix& input);
     static Matrix ReLU(const Matrix& input);
+    static Matrix ReLUDerivative(const Matrix& input);
     static Matrix softmax(const Matrix& input);
 };
 

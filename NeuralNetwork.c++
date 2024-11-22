@@ -46,6 +46,23 @@ Matrix NeuralNetwork::sigmoid(const Matrix& input) {
 }
 
 /**
+ * @brief Applies the derivative of the sigmoid activation function to a matrix.
+ * 
+ * @param input The matrix to apply the sigmoid derivative function to.
+ * @return The matrix with the sigmoid derivative function applied to each element.
+ */
+Matrix NeuralNetwork::sigmoidDerivative(const Matrix& input) {
+    Matrix result = sigmoid(input);
+    result = scalarMultiply(-1, result);
+    Matrix scalarMatrix(1, result.getCols());
+    for (int j = 0; j < result.getCols(); ++j) {
+        scalarMatrix.at(0, j) = 1.0;
+    }
+    result = add(result, scalarMatrix);
+    return result;
+}
+
+/**
  * @brief Applies the ReLU activation function to a matrix.   
  * 
  * The ReLU function is defined as max(0, x), where x is the input matrix.
@@ -59,6 +76,24 @@ Matrix NeuralNetwork::ReLU(const Matrix& input) {
     for (int i = 0; i < input.getRows(); i++) {
         for (int j = 0; j < input.getCols(); j++) {
             result.at(i, j) = std::max(0.0, input.at(i, j));
+        }
+    }
+
+    return result;
+}
+
+/**     
+ * @brief Applies the derivative of the ReLU activation function to a matrix.
+ * 
+ * @param input The matrix to apply the ReLU derivative function to.
+ * @return The matrix with the ReLU derivative function applied to each element.
+ */
+Matrix NeuralNetwork::ReLUDerivative(const Matrix& input) {
+    Matrix result(input.getRows(), input.getCols());
+
+    for (int i = 0; i < input.getRows(); i++) {
+        for (int j = 0; j < input.getCols(); j++) {
+            result.at(i, j) = (input.at(i, j) > 0) ? 1 : 0;
         }
     }
 
@@ -112,4 +147,14 @@ Matrix NeuralNetwork::feedforward(const Matrix& input) {
     }
 
     return activation;
+}
+
+/**
+ * @brief This function performs the backpropagation pass through the neural network.
+ * 
+ * @param input The input matrix.
+ * @param expected The expected output matrix.
+ */
+void NeuralNetwork::backpropagate(const Matrix& input, const Matrix& expected) {
+    return;
 }

@@ -153,6 +153,29 @@ Matrix scalarMultiply(double scalar, const Matrix& matrix) {
 }
 
 /**
+ * @brief Elementwise multiplies two matrices.
+ * 
+ * Elementwise multiplication, also known as the Hadamard product:
+ * [ a b ]   [ e f ]   [ ae be ]
+ * [ c d ] * [ g h ] = [ ce de ]
+ * 
+ * @param a The first matrix.
+ * @param b The second matrix.
+ * @return Elementwise product of the two matrices.
+ */
+Matrix elementwiseMultiply(const Matrix& a, const Matrix& b) {
+    Matrix result(a.getRows(), a.getCols());
+
+    for (int i = 0; i < a.getRows(); i++) {
+        for (int j = 0; j < a.getCols(); j++) {
+            result.at(i, j) = a.at(i, j) * b.at(i, j);
+        }
+    }
+
+    return result;
+}
+
+/**
  * @brief Transposes a matrix.
  * 
  * Matrix transposition:
@@ -172,6 +195,21 @@ Matrix transpose(const Matrix& matrix) {
     }
 
     return result;
+}
+
+/**
+ * @brief Calculates the mean squared error between two matrices.
+ * 
+ * Mean squared error:
+ * 1/2 * (a - b)^2
+ * 
+ * @param a The first matrix.
+ * @param b The second matrix.
+ * @return Mean squared error between the two matrices.
+ */
+Matrix meanSquaredError(const Matrix& a, const Matrix& b) {
+    Matrix diff = subtract(a, b);
+    return scalarMultiply(0.5, multiply(diff, transpose(diff)));
 }
 
 /**
