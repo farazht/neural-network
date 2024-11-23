@@ -20,8 +20,9 @@
  */
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layers) : layers(layers) {
     for (int i = 0; i < layers.size() - 1; i++) {
-        weights.push_back(Matrix(layers[i + 1], layers[i]));
-        biases.push_back(Matrix(layers[i + 1], 1));
+        double limit = std::sqrt(6.0 / (layers[i] + layers[i + 1])); // Xavier initialization
+        weights.push_back(Matrix::randomMatrix(layers[i + 1], layers[i], -limit, limit));
+        biases.push_back(Matrix::randomMatrix(layers[i + 1], 1, -limit, limit));
     }
 }
 
@@ -52,14 +53,14 @@ Matrix NeuralNetwork::sigmoid(const Matrix& input) {
  * @return The matrix with the sigmoid derivative function applied to each element.
  */
 Matrix NeuralNetwork::sigmoidDerivative(const Matrix& input) {
-    Matrix result = sigmoid(input);
-    result = scalarMultiply(-1, result);
-    Matrix scalarMatrix(1, result.getCols());
-    for (int j = 0; j < result.getCols(); ++j) {
-        scalarMatrix.at(0, j) = 1.0;
+    Matrix sigmoid_result = sigmoid(input);
+    Matrix ones(sigmoid_result.getRows(), sigmoid_result.getCols());
+    for (int i = 0; i < ones.getRows(); i++) {
+        for (int j = 0; j < ones.getCols(); j++) {
+            ones.at(i, j) = 1.0;
+        }
     }
-    result = add(result, scalarMatrix);
-    return result;
+    return elementwiseMultiply(sigmoid_result, subtract(ones, sigmoid_result));
 }
 
 /**
@@ -129,6 +130,10 @@ Matrix NeuralNetwork::softmax(const Matrix& input) {
 
 /**
  * @brief This function performs the feedforward pass through the neural network.
+ *
+ * In the feedforward pass, we apply the ReLU activation function to the output
+ * of each layer, until we reach the output layer, where we apply the softmax
+ * activation function instead.
  * 
  * @param input The input matrix.
  * @return The output matrix.
@@ -151,10 +156,65 @@ Matrix NeuralNetwork::feedforward(const Matrix& input) {
 
 /**
  * @brief This function performs the backpropagation pass through the neural network.
+ *
+ * In the backpropagation pass, we calculate the error between the expected output  
+ * and the actual output, and then we update the weights and biases to minimize the
+ * error.
  * 
  * @param input The input matrix.
  * @param expected The expected output matrix.
  */
 void NeuralNetwork::backpropagate(const Matrix& input, const Matrix& expected) {
-    return;
+    std::vector<Matrix> activations;  // Store activations for each layer
+    std::vector<Matrix> zs;           // Store z values (pre-activation) for each layer
+    
+    // Forward pass while storing intermediate values
+    Matrix activation = input;
+    activations.push_back(activation);
+    
+    // Compute and store all activations and z values
+    for (int i = 0; i < weights.size(); i++) {
+        Matrix z = add(multiply(weights[i], activation), biases[i]);
+        zs.push_back(z);
+        
+        if (i < weights.size() - 1) {
+            activation = ReLU(z);
+        } else {
+            activation = softmax(z);
+        }
+        activations.push_back(activation);
+    }
+    
+    // Backpropagation
+    const double LEARNING_RATE = 0.001;
+    
+    // Calculate output layer error
+    // For softmax with cross-entropy loss, the gradient is (output - expected)
+    Matrix delta = subtract(activations.back(), expected);
+    
+    // Backward pass through the network
+    for (int i = weights.size() - 1; i >= 0; i--) {
+        // Calculate gradients for weights and biases
+        Matrix weight_gradient = multiply(delta, transpose(activations[i]));
+        Matrix bias_gradient = delta;
+        
+        // Add L2 regularization to prevent overfitting
+        const double L2_LAMBDA = 0.01;
+        Matrix weight_decay = scalarMultiply(L2_LAMBDA, weights[i]); 
+        weight_gradient = add(weight_gradient, weight_decay);
+        
+        // Calculate delta for next layer before updating weights
+        if (i > 0) {
+            Matrix weighted_error = multiply(transpose(weights[i]), delta);
+            delta = elementwiseMultiply(weighted_error, ReLUDerivative(zs[i-1]));
+            
+            // Scale delta to help with vanishing gradients
+            const double DELTA_SCALE = 1.5;
+            delta = scalarMultiply(DELTA_SCALE, delta);
+        }
+        
+        // Update weights and biases using gradient descent
+        weights[i] = subtract(weights[i], scalarMultiply(LEARNING_RATE, weight_gradient));
+        biases[i] = subtract(biases[i], scalarMultiply(LEARNING_RATE, bias_gradient));
+    }
 }

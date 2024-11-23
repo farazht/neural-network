@@ -16,6 +16,7 @@ private:
 
 public:
     Matrix(int rows, int cols);
+    static Matrix randomMatrix(int rows, int cols, double min, double max);
     int getRows() const;
     int getCols() const;
     double at(int row, int col) const;
@@ -27,7 +28,7 @@ Matrix subtract(const Matrix& a, const Matrix& b);
 Matrix multiply(const Matrix& a, const Matrix& b);
 Matrix scalarMultiply(double scalar, const Matrix& matrix);
 Matrix elementwiseMultiply(const Matrix& a, const Matrix& b);
-Matrix meanSquaredError(const Matrix& a, const Matrix& b);
+double meanSquaredError(const Matrix& a, const Matrix& b);
 Matrix transpose(const Matrix& matrix);
 void printMatrix(const Matrix& matrix);
 

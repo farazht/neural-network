@@ -14,6 +14,16 @@
  */     
 Matrix::Matrix(int rows, int cols) : rows(rows), cols(cols), data(rows, std::vector<double>(cols, 0)) {}
 
+Matrix Matrix::randomMatrix(int rows, int cols, double min, double max) {
+    Matrix result(rows, cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            result.at(i, j) = min + (max - min) * rand() / RAND_MAX;
+        }
+    }
+    return result;
+}
+
 /**
  * @brief Returns the number of rows in the matrix.
  * 
@@ -207,9 +217,17 @@ Matrix transpose(const Matrix& matrix) {
  * @param b The second matrix.
  * @return Mean squared error between the two matrices.
  */
-Matrix meanSquaredError(const Matrix& a, const Matrix& b) {
-    Matrix diff = subtract(a, b);
-    return scalarMultiply(0.5, multiply(diff, transpose(diff)));
+double meanSquaredError(const Matrix& a, const Matrix& b) {
+    double error = 0.0;
+    
+    for (int i = 0; i < a.getRows(); i++) {
+        for (int j = 0; j < a.getCols(); j++) {
+            double diff = a.at(i, j) - b.at(i, j);
+            error += diff * diff;
+        }
+    }
+
+    return error / (2.0 * a.getRows() * a.getCols());
 }
 
 /**
