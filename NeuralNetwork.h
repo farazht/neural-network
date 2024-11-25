@@ -15,6 +15,7 @@ private:
     std::vector<Matrix> weights;
     std::vector<Matrix> biases;
     static const double LEARNING_RATE;
+    static const int INITIALIZATION_STRATEGY;
 
 public:
     NeuralNetwork(const std::vector<int>& layers);

@@ -10,6 +10,7 @@
  * @brief Hyperparameters for the neural network - feel free to adjust.
  */
 const double NeuralNetwork::LEARNING_RATE = 0.001;
+const int NeuralNetwork::INITIALIZATION_STRATEGY = 1; // 1 = He, 2 = Xavier/Glorot, 3 = LeCun
 
 /**
  * @brief Initializes the neural network with the given layers.
@@ -23,8 +24,17 @@ const double NeuralNetwork::LEARNING_RATE = 0.001;
  * @param layers The number of neurons in each layer.
  */
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layers) : layers(layers) {
-    for (int i = 0; i < layers.size() - 1; i++) {
-        double limit = std::sqrt(2.0 / layers[i]);
+    for (int i = 0; i < layers.size() - 1; i++) {  
+        double limit;
+
+        if (INITIALIZATION_STRATEGY == 1) {
+            limit = std::sqrt(2.0 / layers[i]);
+        } else if (INITIALIZATION_STRATEGY == 2) {
+            limit = std::sqrt(6.0 / (layers[i] + layers[i + 1]));
+        } else {
+            limit = std::sqrt(3.0 / layers[i]);
+        }
+        
         weights.push_back(Matrix::randomMatrix(layers[i + 1], layers[i], -limit, limit));
         biases.push_back(Matrix::randomMatrix(layers[i + 1], 1, -limit, limit));
     }

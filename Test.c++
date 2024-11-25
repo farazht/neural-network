@@ -1,12 +1,19 @@
 /**
  * @file Test.c++
- * @brief Test file for the neural network.
+ * @brief Test file, mainly used for debugging during development.
  */
 
 #include "NeuralNetwork.h"
 #include "LinearAlgebra.h"
 #include <iostream>
 
+/**
+ * @brief Prints results, allowing interpretation of the current state of the network's performance.
+ * 
+ * @param input The input matrix.
+ * @param output The output matrix.
+ * @param expected The expected output matrix.
+ */
 void printResults(const Matrix& input, const Matrix& output, const Matrix& expected) {
     std::cout << "\n - INPUT MATRIX - " << std::endl;
     printMatrix(input);
@@ -23,14 +30,13 @@ void printResults(const Matrix& input, const Matrix& output, const Matrix& expec
 
 int main() {
     // 1. INITIALIZE NETWORK (12 inputs, 16 hidden neurons, 12 hidden neurons, 6 outputs)
-    NeuralNetwork nn({12, 16, 12, 6});  
+    NeuralNetwork nn({12, 16, 12, 6});
 
     // 2. CREATE INPUT MATRIX (12 inputs, 7 samples)
     Matrix input(12, 7);
     for (int j = 0; j < input.getCols(); j++) {
         for (int i = 0; i < input.getRows(); i++) {
-            // Replace alternating pattern with normalized random values
-            input.at(i, j) = (double)rand() / RAND_MAX;  // Random values between 0 and 1
+            input.at(i, j) = (double)rand() / RAND_MAX;
         }
     }
     
@@ -66,10 +72,8 @@ int main() {
             } else {
                 std::cout << "incorrect dimensions" << std::endl;
             }
-                        
-            // printResults(input, output, expected);
 
-            // print a "diffs" matrix
+            // print a matrix of differences. for ease of interpretation, small numbers display as 0
             Matrix diffs = subtract(output, expected);
             for (int j = 0; j < diffs.getCols(); j++) {
                 for (int i = 0; i < diffs.getRows(); i++) {
