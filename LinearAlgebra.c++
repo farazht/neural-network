@@ -14,11 +14,38 @@
  */     
 Matrix::Matrix(int rows, int cols) : rows(rows), cols(cols), data(rows, std::vector<double>(cols, 0)) {}
 
+/**
+ * @brief Initializes a matrix with random values between the given minimum and maximum.
+ * 
+ * @param rows Number of rows.
+ * @param cols Number of columns.
+ * @param min Minimum value.
+ * @param max Maximum value.
+ * @return The initialized matrix.
+ */
 Matrix Matrix::randomMatrix(int rows, int cols, double min, double max) {
     Matrix result(rows, cols);
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             result.at(i, j) = min + (max - min) * rand() / RAND_MAX;
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief Initializes a matrix with all elements set to the given value.
+ * 
+ * @param rows Number of rows.
+ * @param cols Number of columns.
+ * @param value Value to set all elements to.
+ * @return The initialized matrix.
+ */
+Matrix Matrix::valueMatrix(int rows, int cols, double value) {
+    Matrix result(rows, cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            result.at(i, j) = value;
         }
     }
     return result;
@@ -163,17 +190,17 @@ Matrix scalarMultiply(double scalar, const Matrix& matrix) {
 }
 
 /**
- * @brief Elementwise multiplies two matrices.
+ * @brief Calculates the Hadamard product of two matrices.
  * 
- * Elementwise multiplication, also known as the Hadamard product:
+ * Hadamard product, also known as elementwise multiplication:
  * [ a b ]   [ e f ]   [ ae be ]
  * [ c d ] * [ g h ] = [ ce de ]
  * 
  * @param a The first matrix.
  * @param b The second matrix.
- * @return Elementwise product of the two matrices.
+ * @return Hadamard product of the two matrices.
  */
-Matrix elementwiseMultiply(const Matrix& a, const Matrix& b) {
+Matrix hadamardProduct(const Matrix& a, const Matrix& b) {
     Matrix result(a.getRows(), a.getCols());
 
     for (int i = 0; i < a.getRows(); i++) {
@@ -219,7 +246,7 @@ Matrix transpose(const Matrix& matrix) {
  */
 double meanSquaredError(const Matrix& a, const Matrix& b) {
     double error = 0.0;
-    
+
     for (int i = 0; i < a.getRows(); i++) {
         for (int j = 0; j < a.getCols(); j++) {
             double diff = a.at(i, j) - b.at(i, j);

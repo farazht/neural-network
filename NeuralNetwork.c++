@@ -5,7 +5,11 @@
 
 #include "NeuralNetwork.h"
 #include "LinearAlgebra.h"
-#include <cmath>
+
+/**
+ * @brief Hyperparameters for the neural network - feel free to adjust.
+ */
+const double NeuralNetwork::LEARNING_RATE = 0.001;
 
 /**
  * @brief Initializes the neural network with the given layers.
@@ -20,7 +24,7 @@
  */
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layers) : layers(layers) {
     for (int i = 0; i < layers.size() - 1; i++) {
-        double limit = std::sqrt(6.0 / (layers[i] + layers[i + 1])); // Xavier initialization
+        double limit = std::sqrt(2.0 / layers[i]);
         weights.push_back(Matrix::randomMatrix(layers[i + 1], layers[i], -limit, limit));
         biases.push_back(Matrix::randomMatrix(layers[i + 1], 1, -limit, limit));
     }
@@ -39,7 +43,7 @@ Matrix NeuralNetwork::sigmoid(const Matrix& input) {
 
     for (int i = 0; i < input.getRows(); i++) {
         for (int j = 0; j < input.getCols(); j++) {
-            result.at(i, j) = 1 / (1 + exp(-input.at(i, j)));   
+            result.at(i, j) = 1 / (1 + std::exp(-input.at(i, j)));   
         }
     }
 
@@ -48,19 +52,17 @@ Matrix NeuralNetwork::sigmoid(const Matrix& input) {
 
 /**
  * @brief Applies the derivative of the sigmoid activation function to a matrix.
+ *
+ * The sigmoid derivative function is defined as sigmoid(x) * (1 - sigmoid(x)), 
+ * where x is the input matrix.
  * 
  * @param input The matrix to apply the sigmoid derivative function to.
  * @return The matrix with the sigmoid derivative function applied to each element.
  */
 Matrix NeuralNetwork::sigmoidDerivative(const Matrix& input) {
     Matrix sigmoid_result = sigmoid(input);
-    Matrix ones(sigmoid_result.getRows(), sigmoid_result.getCols());
-    for (int i = 0; i < ones.getRows(); i++) {
-        for (int j = 0; j < ones.getCols(); j++) {
-            ones.at(i, j) = 1.0;
-        }
-    }
-    return elementwiseMultiply(sigmoid_result, subtract(ones, sigmoid_result));
+    Matrix ones = Matrix::valueMatrix(sigmoid_result.getRows(), sigmoid_result.getCols(), 1.0);
+    return hadamardProduct(sigmoid_result, subtract(ones, sigmoid_result));
 }
 
 /**
@@ -76,7 +78,7 @@ Matrix NeuralNetwork::ReLU(const Matrix& input) {
 
     for (int i = 0; i < input.getRows(); i++) {
         for (int j = 0; j < input.getCols(); j++) {
-            result.at(i, j) = std::max(0.0, input.at(i, j));
+            result.at(i, j) = (input.at(i, j) > 0) ? input.at(i, j) : 0;
         }
     }
 
@@ -85,6 +87,8 @@ Matrix NeuralNetwork::ReLU(const Matrix& input) {
 
 /**     
  * @brief Applies the derivative of the ReLU activation function to a matrix.
+ *
+ * The ReLU derivative function is defined as 0 if x <= 0, and 1 otherwise.
  * 
  * @param input The matrix to apply the ReLU derivative function to.
  * @return The matrix with the ReLU derivative function applied to each element.
@@ -102,31 +106,33 @@ Matrix NeuralNetwork::ReLUDerivative(const Matrix& input) {
 }
 
 /**
- * @brief Applies the softmax activation function to a matrix.
+ * @brief Applies the softmax activation function column-wise to a matrix.
  *
  * The softmax function is defined as e^x_i / sum(e^x_j) for all j in [0, n), 
- * where x is the input vector and n is the length of the vector.
- * 
- * @param input The matrix to apply the softmax function to.
- * @return The matrix with the softmax function applied to each element.
+ * where x is a column vector in the input matrix, and n is the number of rows.
+ *
+ * @param input The matrix where each column represents a vector of logits.
+ * @return The matrix with the softmax function applied to each column.
  */
 Matrix NeuralNetwork::softmax(const Matrix& input) {
     Matrix result(input.getRows(), input.getCols());
-
+    
     for (int j = 0; j < input.getCols(); j++) {
         double sum_exp = 0.0;
         
         for (int i = 0; i < input.getRows(); i++) {
-            sum_exp += std::exp(input.at(i, j));
+            result.at(i, j) = std::exp(input.at(i, j));
+            sum_exp += result.at(i, j);
         }
-
+        
         for (int i = 0; i < input.getRows(); i++) {
-            result.at(i, j) = std::exp(input.at(i, j)) / sum_exp;
+            result.at(i, j) /= sum_exp;
         }
     }
     
     return result;
 }
+
 
 /**
  * @brief This function performs the feedforward pass through the neural network.
@@ -142,17 +148,18 @@ Matrix NeuralNetwork::feedforward(const Matrix& input) {
     Matrix activation = input;
 
     for (int i = 0; i < weights.size(); i++) {
-        activation = add(multiply(weights[i], activation), biases[i]);
-
+        Matrix z = add(multiply(weights[i], activation), biases[i]);
+        
         if (i < weights.size() - 1) {
-            activation = ReLU(activation);
+            activation = ReLU(z);
         } else {
-            activation = softmax(activation);
+            activation = softmax(z);
         }
     }
 
     return activation;
 }
+
 
 /**
  * @brief This function performs the backpropagation pass through the neural network.
@@ -165,14 +172,11 @@ Matrix NeuralNetwork::feedforward(const Matrix& input) {
  * @param expected The expected output matrix.
  */
 void NeuralNetwork::backpropagate(const Matrix& input, const Matrix& expected) {
-    std::vector<Matrix> activations;  // Store activations for each layer
-    std::vector<Matrix> zs;           // Store z values (pre-activation) for each layer
+    std::vector<Matrix> activations = {input};
+    std::vector<Matrix> zs;
     
-    // Forward pass while storing intermediate values
+    // modified feedforward pass which stores intermediate values
     Matrix activation = input;
-    activations.push_back(activation);
-    
-    // Compute and store all activations and z values
     for (int i = 0; i < weights.size(); i++) {
         Matrix z = add(multiply(weights[i], activation), biases[i]);
         zs.push_back(z);
@@ -185,36 +189,18 @@ void NeuralNetwork::backpropagate(const Matrix& input, const Matrix& expected) {
         activations.push_back(activation);
     }
     
-    // Backpropagation
-    const double LEARNING_RATE = 0.001;
-    
-    // Calculate output layer error
-    // For softmax with cross-entropy loss, the gradient is (output - expected)
     Matrix delta = subtract(activations.back(), expected);
     
-    // Backward pass through the network
+    // minimizes error by updating weights and biases
     for (int i = weights.size() - 1; i >= 0; i--) {
-        // Calculate gradients for weights and biases
         Matrix weight_gradient = multiply(delta, transpose(activations[i]));
-        Matrix bias_gradient = delta;
         
-        // Add L2 regularization to prevent overfitting
-        const double L2_LAMBDA = 0.01;
-        Matrix weight_decay = scalarMultiply(L2_LAMBDA, weights[i]); 
-        weight_gradient = add(weight_gradient, weight_decay);
-        
-        // Calculate delta for next layer before updating weights
         if (i > 0) {
             Matrix weighted_error = multiply(transpose(weights[i]), delta);
-            delta = elementwiseMultiply(weighted_error, ReLUDerivative(zs[i-1]));
-            
-            // Scale delta to help with vanishing gradients
-            const double DELTA_SCALE = 1.5;
-            delta = scalarMultiply(DELTA_SCALE, delta);
+            delta = hadamardProduct(weighted_error, ReLUDerivative(zs[i-1]));
         }
         
-        // Update weights and biases using gradient descent
         weights[i] = subtract(weights[i], scalarMultiply(LEARNING_RATE, weight_gradient));
-        biases[i] = subtract(biases[i], scalarMultiply(LEARNING_RATE, bias_gradient));
+        biases[i] = subtract(biases[i], scalarMultiply(LEARNING_RATE, delta));
     }
 }

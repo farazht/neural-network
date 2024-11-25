@@ -1,6 +1,6 @@
 /**
  * @file Test.c++
- * @brief Test the neural network.
+ * @brief Test file for the neural network.
  */
 
 #include "NeuralNetwork.h"
@@ -22,14 +22,15 @@ void printResults(const Matrix& input, const Matrix& output, const Matrix& expec
 }
 
 int main() {
-    // 1. INITIALIZE NETWORK (12 inputs, 16 and 10 hidden neurons, 6 outputs)
-    NeuralNetwork nn({12, 16, 10, 6});  
+    // 1. INITIALIZE NETWORK (12 inputs, 16 hidden neurons, 12 hidden neurons, 6 outputs)
+    NeuralNetwork nn({12, 16, 12, 6});  
 
     // 2. CREATE INPUT MATRIX (12 inputs, 7 samples)
     Matrix input(12, 7);
     for (int j = 0; j < input.getCols(); j++) {
         for (int i = 0; i < input.getRows(); i++) {
-            input.at(i, j) = (i + j) % 2;
+            // Replace alternating pattern with normalized random values
+            input.at(i, j) = (double)rand() / RAND_MAX;  // Random values between 0 and 1
         }
     }
     
@@ -50,13 +51,13 @@ int main() {
     }
     
     // 5. BACKPROPAGATION LOOP
-    const int epochs = 1000;
+    const int epochs = 10000;
     
     for (int epoch = 0; epoch < epochs; epoch++) {
         nn.backpropagate(input, expected);
         
         // progress check
-        if (epoch % 100 == 0) {
+        if (epoch % 1000 == 0) {
             std::cout << "\nEpoch " << epoch << ":" << std::endl;
             Matrix output = nn.feedforward(input);
             
@@ -66,7 +67,18 @@ int main() {
                 std::cout << "incorrect dimensions" << std::endl;
             }
                         
-            printResults(input, output, expected);
+            // printResults(input, output, expected);
+
+            // print a "diffs" matrix
+            Matrix diffs = subtract(output, expected);
+            for (int j = 0; j < diffs.getCols(); j++) {
+                for (int i = 0; i < diffs.getRows(); i++) {
+                    if (diffs.at(i, j) < 0.01 && diffs.at(i, j) > -0.01) {
+                        diffs.at(i, j) = 0.0;
+                    }
+                }
+            }
+            printMatrix(diffs);
         }
     }
     
