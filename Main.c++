@@ -75,7 +75,7 @@ int main() {
     NeuralNetwork nn({784, 64, 32, 10});
     
     // 2. LOAD TRAINING DATASET
-    auto trainingData = loadDataset("mnist_train.txt");
+    auto trainingData = loadDataset("data/mnist_train.txt");
     
     if (trainingData.empty()) {
         std::cout << "Error: No training data loaded" << std::endl;
@@ -104,7 +104,7 @@ int main() {
     }
     
     // 4. LOAD TEST DATASET
-    auto testData = loadDataset("mnist_test.txt");
+    auto testData = loadDataset("data/mnist_test.txt");
     
     if (testData.empty()) {
         std::cout << "Error: No test data loaded" << std::endl;
